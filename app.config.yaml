@@ -1,0 +1,72 @@
+extensions:
+  dx/excshell/1:
+    operations:
+      view:
+        - type: web
+          impl: index.html
+    actions: actions
+    web: web-src
+    runtimeManifest:
+      packages:
+        erp-order-export:
+          license: Apache-2.0
+          actions:
+            list-orders:
+              function: actions/list-orders/index.js
+              web: 'yes'
+              runtime: nodejs:22
+              inputs: &commonInputs
+                LOG_LEVEL: $LOG_LEVEL
+                COMMERCE_SANDBOX_ADMIN_URL: $COMMERCE_SANDBOX_ADMIN_URL
+                COMMERCE_CLIENT_ID: $COMMERCE_CLIENT_ID
+                COMMERCE_CLIENT_SECRET: $COMMERCE_CLIENT_SECRET
+                COMMERCE_ORG_ID: $COMMERCE_ORG_ID
+                COMMERCE_STORE: $COMMERCE_STORE
+                ERP_BASE_URL: $ERP_BASE_URL
+                ERP_ORDERS_PATH: $ERP_ORDERS_PATH
+                ERP_API_KEY: $ERP_API_KEY
+                ORDER_STATUSES: $ORDER_STATUSES
+                SYNC_START_DATE: $SYNC_START_DATE
+              annotations:
+                require-adobe-auth: true
+                include-ims-credentials: true
+                final: true
+            export-orders:
+              function: actions/export-orders/index.js
+              web: 'yes'
+              runtime: nodejs:22
+              inputs: *commonInputs
+              limits:
+                timeout: 300000
+              annotations:
+                require-adobe-auth: true
+                include-ims-credentials: true
+                final: true
+            export-status:
+              function: actions/export-status/index.js
+              web: 'yes'
+              runtime: nodejs:22
+              inputs: *commonInputs
+              annotations:
+                require-adobe-auth: true
+                include-ims-credentials: true
+                final: true
+            scheduled-export:
+              function: actions/scheduled-export/index.js
+              web: 'no'
+              runtime: nodejs:22
+              inputs: *commonInputs
+              limits:
+                timeout: 300000
+              annotations:
+                include-ims-credentials: true
+                final: true
+          triggers:
+            erp-export-interval:
+              feed: /whisk.system/alarms/interval
+              inputs:
+                minutes: 15
+          rules:
+            erp-export-schedule:
+              trigger: erp-export-interval
+              action: scheduled-export
